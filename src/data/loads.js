@@ -437,6 +437,70 @@ export const LOADS = [
 
 export const loadById = (id) => LOADS.find((l) => l.id === id) || null
 
+/* ---------------------------------------------------------------------------
+   Direct upload.
+
+   A tender that never went through the inbox — someone dropped the PDF in by
+   hand. It runs the identical read-and-review flow; only the source differs.
+   --------------------------------------------------------------------------- */
+
+const UPLOAD_BASE = {
+  source: 'upload',
+  status: 'review',
+  customer: 'Southern Grain Partners',
+  pickupCity: 'Savannah',
+  pickupState: 'GA',
+  pickupZip: '31408',
+  pickupDate: '2026-08-07',
+  pickupWindow: '06:00 – 14:00',
+  deliveryCity: 'Nashville',
+  deliveryState: 'TN',
+  deliveryZip: '37211',
+  deliveryDate: '2026-08-08',
+  deliveryWindow: '07:00 – 13:00',
+  commodity: 'Bagged rice, palletized',
+  weight: 44120,
+  equipment: 'Dry Van',
+  customerRate: 2278,
+  carrierRate: 1834,
+  carrierId: 'cardinal-haul',
+  docContact: '(912) 555-0173',
+  fromEmail: 'ops@southerngrainpartners.com',
+  poRef: 'PO-664019',
+  pieces: '21 pallets',
+  extract: {
+    customer: hi(98),
+    pickup: hi(99),
+    pickupDate: hi(99),
+    delivery: hi(99),
+    deliveryDate: hi(97),
+    commodity: hi(96),
+    weight: hi(99),
+    equipment: hi(98),
+    customerRate: hi(99),
+    carrier: hi(96),
+    carrierRate: hi(99)
+  }
+}
+
+let uploadSeq = 0
+
+export function makeUploadedLoad(file) {
+  uploadSeq += 1
+  return {
+    ...UPLOAD_BASE,
+    id: `LD-${48261 + (uploadSeq - 1) * 3}`,
+    fileName: file.name,
+    fileSize: file.size,
+    receivedAt: 'Just now'
+  }
+}
+
+export const fileSize = (bytes) =>
+  bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`
+
 /* --- formatting helpers ---------------------------------------------------- */
 
 export const money = (n) =>
@@ -496,11 +560,15 @@ export function buildDocument(load) {
   const L = (...parts) => parts
   const BLANK = null
 
+  const origin =
+    load.source === 'upload'
+      ? [L(`File:     ${load.fileName}`), L(`Uploaded: ${load.receivedAt} · by D. Whitaker`)]
+      : [L(`From:     ${load.fromEmail}`), L(`Received: ${load.receivedAt}`)]
+
   return [
     L('RATE CONFIRMATION — SHEET 1 OF 1'),
     L('────────────────────────────────────────────────────────'),
-    L(`From:     ${load.fromEmail}`),
-    L(`Received: ${load.receivedAt}`),
+    ...origin,
     L(
       `Subject:  RATE CON // ${load.pickupCity.toUpperCase()} ${load.pickupState} -> ${load.deliveryCity.toUpperCase()} ${load.deliveryState}`
     ),

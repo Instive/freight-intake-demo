@@ -11,6 +11,17 @@ npm install
 npm run dev
 ```
 
+## Two ways a tender gets in
+
+The top of **Load Queue** shows both intake sources side by side:
+
+- **Email inbox** — watched, reads tenders as they arrive.
+- **Upload a rate confirmation** — drop a PDF onto the card or click *Choose a PDF*.
+
+An uploaded PDF creates a load and goes straight to the same read-and-review screen an
+emailed tender lands on. The real filename and size are shown throughout; the extracted
+values come from a fixture, since the demo has no backend and no parser.
+
 ## The three loads to demo
 
 Open **Load Queue** and click into these in order. Each one opens full-screen and

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   buildDocument,
+  fileSize,
   marginOf,
   money,
   prettyDate,
@@ -11,16 +12,22 @@ import { CARRIERS, CUSTOMERS, EQUIPMENT, MARGIN_THRESHOLD, carrierById } from '.
 /* --------------------------------------------------------------------------
    The processing sequence. Four stages, ~1.8s in total, then the form fades in.
    -------------------------------------------------------------------------- */
-const STAGES = [
-  { label: 'Reading rate confirmation', detail: 'Opening the PDF attached to the email' },
+const stagesFor = (uploaded) => [
+  {
+    label: 'Reading rate confirmation',
+    detail: uploaded
+      ? 'Opening the PDF you uploaded'
+      : 'Opening the PDF attached to the email'
+  },
   { label: 'Extracting fields', detail: 'Pulling lane, dates, freight and rates off the page' },
   { label: 'Matching carrier to ITS Dispatch', detail: 'Checking the name and MC against your carrier list' },
   { label: 'Scoring confidence', detail: 'Marking anything it is not sure about' }
 ]
+const STAGE_COUNT = 4
 const STAGE_MS = 450
 
 const STEPS = [
-  { key: 'received', label: 'Tender received', plain: 'Email landed' },
+  { key: 'received', label: 'Tender received', plain: 'Document in' },
   { key: 'extracted', label: 'Extracted', plain: 'Document read' },
   { key: 'carrier', label: 'Carrier assigned', plain: 'Carrier matched' },
   { key: 'review', label: 'Review', plain: 'Your check' },
@@ -108,7 +115,7 @@ const safePretty = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? prettyDate(iso) :
 export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
   const alreadyOpened = Boolean(record?.opened)
 
-  const [stage, setStage] = useState(alreadyOpened ? STAGES.length : -1)
+  const [stage, setStage] = useState(alreadyOpened ? STAGE_COUNT : -1)
   const [values, setValues] = useState(() => record?.values || initialValues(load))
   const [sources, setSources] = useState(() => record?.sources || {})
   const [flagsReviewed, setFlagsReviewed] = useState(Boolean(record?.flagsReviewed))
@@ -116,13 +123,15 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
   const [pushing, setPushing] = useState(false)
   const [activeField, setActiveField] = useState(null)
 
-  const doneProcessing = stage >= STAGES.length
+  const uploaded = load.source === 'upload'
+  const stages = useMemo(() => stagesFor(uploaded), [uploaded])
+  const doneProcessing = stage >= STAGE_COUNT
 
   /* --- the visible processing sequence ---------------------------------- */
   useEffect(() => {
     if (alreadyOpened) return undefined
     const timers = []
-    for (let i = 0; i <= STAGES.length; i += 1) {
+    for (let i = 0; i <= STAGE_COUNT; i += 1) {
       timers.push(setTimeout(() => setStage(i), i * STAGE_MS))
     }
     return () => timers.forEach(clearTimeout)
@@ -209,7 +218,9 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
           <div className="processing__head">
             <span className="processing__pulse" />
             <div>
-              <h2>Reading the tender for {load.id}</h2>
+              <h2>
+                {uploaded ? `Reading ${load.fileName}` : `Reading the tender for ${load.id}`}
+              </h2>
               <p>
                 Nothing is written to ITS Dispatch during this step. The agent only reads
                 the document and prepares a draft for you.
@@ -217,7 +228,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             </div>
           </div>
           <ol className="processing__stages">
-            {STAGES.map((s, i) => (
+            {stages.map((s, i) => (
               <li
                 key={s.label}
                 className={`pstage${i < stage ? ' is-done' : ''}${i === stage ? ' is-running' : ''}`}
@@ -264,7 +275,11 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
           <div className="detail__idrow">
             <span className="mono detail__id">{load.id}</span>
             <StatusPill status={pushed ? 'cleared' : load.status} />
-            <span className="detail__meta">Rate con received {load.receivedAt}</span>
+            <span className="detail__meta">
+              {uploaded
+                ? `Uploaded ${load.receivedAt.toLowerCase()} from ${load.fileName}`
+                : `Rate con received ${load.receivedAt}`}
+            </span>
           </div>
           <h2 className="detail__lane">
             {load.pickupCity}, {load.pickupState}
@@ -350,11 +365,20 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
         <section className="panel panel--doc">
           <div className="panel__head">
             <div>
-              <h3>What arrived in the inbox</h3>
+              <h3>{uploaded ? 'The PDF you uploaded' : 'What arrived in the inbox'}</h3>
               <p>
                 The original rate confirmation. Highlighted text is what the agent used —
                 click any highlight to jump to the field it filled.
               </p>
+              {uploaded && (
+                <span className="filetag mono">
+                  <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+                    <path d="M8 1.4H3.9a1.2 1.2 0 0 0-1.2 1.2v8.8a1.2 1.2 0 0 0 1.2 1.2h6.2a1.2 1.2 0 0 0 1.2-1.2V4.6z" />
+                    <path d="M8 1.4v3.2h3.3" />
+                  </svg>
+                  {load.fileName} · {fileSize(load.fileSize)}
+                </span>
+              )}
             </div>
           </div>
           <div className="doc">

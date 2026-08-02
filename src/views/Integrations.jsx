@@ -130,6 +130,22 @@ export default function Integrations({ autoPost, onToggleAutoPost }) {
         </p>
       </section>
 
+      <section className="card srccard">
+        <div className="srccard__row">
+          <div>
+            <h3>Direct PDF upload</h3>
+            <p className="srccard__sub mono">FROM THE LOAD QUEUE · PDF ONLY</p>
+          </div>
+          <span className="pill pill--cleared">Available</span>
+        </div>
+        <p className="srccard__body">
+          Not every tender arrives by email. Anyone on the desk can drop a rate
+          confirmation straight onto the load queue and it is read the same way, in the
+          same few seconds, and stops at the same review screen. Useful for tenders that
+          came in by text, by portal, or from a broker who insists on calling first.
+        </p>
+      </section>
+
       <section className="card srccard srccard--muted">
         <div className="srccard__row">
           <div>

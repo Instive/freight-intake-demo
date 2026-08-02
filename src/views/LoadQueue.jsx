@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import IntakeBar from '../components/IntakeBar.jsx'
 import { marginOf, money } from '../data/loads.js'
 import { carrierById, MARGIN_THRESHOLD } from '../data/master.js'
 
@@ -14,7 +15,7 @@ const STATUS = {
   hold: ['pill--hold', 'On hold']
 }
 
-export default function LoadQueue({ loads, onOpenLoad }) {
+export default function LoadQueue({ loads, onOpenLoad, onUpload }) {
   const [filter, setFilter] = useState('all')
 
   const counts = {
@@ -29,6 +30,11 @@ export default function LoadQueue({ loads, onOpenLoad }) {
 
   return (
     <div className="view">
+      <IntakeBar
+        emailCount={loads.filter((l) => l.source !== 'upload').length}
+        onUpload={onUpload}
+      />
+
       <div className="queuebar">
         <div className="segments">
           {FILTERS.map((f) => (
@@ -76,7 +82,10 @@ export default function LoadQueue({ loads, onOpenLoad }) {
                 >
                   <td>
                     <span className="mono td-id">{l.id}</span>
-                    <span className="td-sub">{l.receivedAt}</span>
+                    <span className="td-sub">
+                      {l.source === 'upload' && <span className="td-src mono">PDF</span>}
+                      {l.receivedAt}
+                    </span>
                   </td>
                   <td>
                     <span className="td-lane">

@@ -7,7 +7,7 @@ import LoadQueue from './views/LoadQueue.jsx'
 import LoadDetail from './views/LoadDetail.jsx'
 import Insights from './views/Insights.jsx'
 import Integrations from './views/Integrations.jsx'
-import { LOADS, loadById } from './data/loads.js'
+import { LOADS, makeUploadedLoad } from './data/loads.js'
 
 const TITLES = {
   dashboard: {
@@ -34,8 +34,10 @@ export default function App() {
   const [records, setRecords] = useState({})
   const [toast, setToast] = useState(null)
   const [autoPost, setAutoPost] = useState(false)
+  const [uploads, setUploads] = useState([]) // tenders dropped in as PDFs
 
-  const activeLoad = activeId ? loadById(activeId) : null
+  const allLoads = [...uploads, ...LOADS]
+  const activeLoad = activeId ? allLoads.find((l) => l.id === activeId) || null : null
 
   const navigate = useCallback((next) => {
     setView(next)
@@ -59,6 +61,17 @@ export default function App() {
     setRecords((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))
   }, [])
 
+  /* A PDF dropped in by hand becomes a load and goes straight to the same
+     read-and-review screen an emailed tender lands on. */
+  const uploadPdf = useCallback(
+    (file) => {
+      const load = makeUploadedLoad(file)
+      setUploads((prev) => [load, ...prev])
+      openLoad(load.id)
+    },
+    [openLoad]
+  )
+
   const dismissToast = useCallback(() => setToast(null), [])
 
   // Esc always gets you out of the detail view.
@@ -71,7 +84,7 @@ export default function App() {
   }, [view, backToQueue])
 
   const statusOf = (load) => records[load.id]?.status || load.status
-  const queue = LOADS.map((l) => ({ ...l, status: statusOf(l) }))
+  const queue = allLoads.map((l) => ({ ...l, status: statusOf(l) }))
 
   const head =
     view === 'detail' && activeLoad
@@ -92,7 +105,9 @@ export default function App() {
           {view === 'dashboard' && (
             <Dashboard loads={queue} onOpenLoad={openLoad} onNavigate={navigate} />
           )}
-          {view === 'queue' && <LoadQueue loads={queue} onOpenLoad={openLoad} />}
+          {view === 'queue' && (
+            <LoadQueue loads={queue} onOpenLoad={openLoad} onUpload={uploadPdf} />
+          )}
           {view === 'detail' && activeLoad && (
             <LoadDetail
               key={activeLoad.id}
