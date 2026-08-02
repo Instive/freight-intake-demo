@@ -86,9 +86,9 @@ export default function App() {
       <Sidebar view={view} onNavigate={navigate} />
 
       <div className="main">
-        <Topbar title={head.title} subtitle={head.subtitle} />
+        <Topbar title={head.title} subtitle={head.subtitle} wide={view === 'detail'} />
 
-        <main className="page">
+        <main className={`page${view === 'detail' ? ' page--wide' : ''}`}>
           {view === 'dashboard' && (
             <Dashboard loads={queue} onOpenLoad={openLoad} onNavigate={navigate} />
           )}

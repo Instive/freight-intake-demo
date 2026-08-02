@@ -59,6 +59,9 @@
 
   --rail-w: 248px;
   --page-max: 1120px;
+  /* the load detail is a two-panel workspace and needs more room than a
+     reading view — the document and the form must sit side by side */
+  --page-max-wide: 1320px;
 }
 
 /* --- Reset ---------------------------------------------------------------- */

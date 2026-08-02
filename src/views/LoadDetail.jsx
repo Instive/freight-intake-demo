@@ -744,12 +744,10 @@ function Field({ fieldKey, label, help, load, sources, children, onFocusField, i
       onFocus={() => onFocusField(fieldKey)}
     >
       <div className="field__top">
-        <span className="field__label">
-          {label}
-          {help && <em>{help}</em>}
-        </span>
+        <span className="field__label">{label}</span>
         <span className={`chip chip--${chip.tone}`}>{chip.text}</span>
       </div>
+      {help && <span className="field__help">{help}</span>}
       {children}
       <p className={`hint${source === 'manual' ? ' hint--manual' : ''}${chip.tone === 'bad' ? ' hint--bad' : ''}`}>
         {note}
