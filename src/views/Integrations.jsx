@@ -2,12 +2,14 @@ const READS = [
   'Customer list — 12 accounts',
   'Carrier list — 15 carriers with MC numbers',
   'Equipment types — 4',
-  'Your 12% margin floor'
+  'Your 12% margin floor',
+  'Lane history, to suggest a carrier you have used before'
 ]
 
 const WRITES = [
   'A new load record, once you press approve',
   'The carrier assignment you confirmed',
+  'The rate confirmation, once you press send',
   'An audit line naming who approved it and when'
 ]
 
@@ -124,7 +126,7 @@ export default function Integrations({ autoPost, onToggleAutoPost }) {
           <span className="pill pill--cleared">Watching</span>
         </div>
         <p className="srccard__body">
-          Rate confirmations and load tenders are read the moment they arrive — PDF
+          Load tenders are read the moment they arrive — PDF
           attachments and plain email both. Nothing else in the mailbox is touched, and
           the agent never replies to anyone on your behalf.
         </p>
@@ -139,10 +141,10 @@ export default function Integrations({ autoPost, onToggleAutoPost }) {
           <span className="pill pill--cleared">Available</span>
         </div>
         <p className="srccard__body">
-          Not every tender arrives by email. Anyone on the desk can drop a rate
-          confirmation straight onto the load queue and it is read the same way, in the
-          same few seconds, and stops at the same review screen. Useful for tenders that
-          came in by text, by portal, or from a broker who insists on calling first.
+          Not every tender arrives by email. Anyone on the desk can drop one straight onto
+          the load queue and it is read the same way, in the same few seconds, and stops at
+          the same review screen. Useful for tenders that came in by text, by portal, or
+          from a customer who insists on calling first.
         </p>
       </section>
 
@@ -156,7 +158,7 @@ export default function Integrations({ autoPost, onToggleAutoPost }) {
         </div>
         <p className="srccard__body">
           Used to check MC numbers, registered domains, insurance certificates and contact
-          details against what a rate confirmation claims. This is what caught the six
+          details against what a tender claims. This is what caught the six
           suspect carriers this month.
         </p>
       </section>

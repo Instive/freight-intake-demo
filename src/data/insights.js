@@ -47,13 +47,14 @@ export const WEEKLY_HOURS = [
 export const BEFORE_AFTER = {
   before: {
     title: 'The way it works today',
-    time: '11 min',
+    time: '17 min',
     timeLabel: 'per load, by hand',
     steps: [
-      'Open the rate con in the inbox and read it',
-      'Retype 11 fields into ITS Dispatch, tabbing between screens',
+      'Open the load tender in the inbox and read it',
+      'Retype 9 fields into ITS Dispatch, tabbing between screens',
       'Look up the carrier and check the MC number by hand',
       'Work out the margin on a calculator or a sticky note',
+      'Fill in the rate con template again, retyping the same 9 fields',
       'Catch the typo two days later when the invoice does not match'
     ]
   },
@@ -62,20 +63,43 @@ export const BEFORE_AFTER = {
     time: '40 sec',
     timeLabel: 'per load, reviewing',
     steps: [
-      'The document is read the moment it lands in the inbox',
-      'All 11 fields arrive filled in, each one showing where it came from',
-      'The carrier is matched to your ITS Dispatch list and checked against FMCSA',
+      'The tender is read the moment it lands in the inbox',
+      'All 9 fields arrive filled in, each one showing where it came from',
+      'A carrier is suggested from your lane history and checked against FMCSA',
       'Margin is calculated and flagged if it falls under your 12% floor',
+      'The rate con writes itself from the record and waits for you to send it',
       'You read it, fix anything you disagree with, and approve'
     ]
   }
 }
 
+/* The three automations, in the order they fire on a load. */
+export const ROUND_TRIP = [
+  {
+    step: '01',
+    kind: 'Extraction',
+    title: 'Tender in',
+    body: 'The customer sends a load tender. Nine fields are read off it and filled in.'
+  },
+  {
+    step: '02',
+    kind: 'Validation',
+    title: 'Decision made',
+    body: 'You assign the carrier. FMCSA and insurance checks fire, margin is calculated.'
+  },
+  {
+    step: '03',
+    kind: 'Generation',
+    title: 'Rate con out',
+    body: 'The rate confirmation writes itself from the record. No reading, nothing to get wrong.'
+  }
+]
+
 export const ACTIVITY = [
   {
     time: '9:28 AM',
     load: 'LD-48240',
-    text: 'Read the rate con and filled in 11 of 11 fields',
+    text: 'Read the tender, filled 9 of 9 fields, rate con sent',
     tone: 'cleared'
   },
   {
@@ -93,7 +117,7 @@ export const ACTIVITY = [
   {
     time: '7:42 AM',
     load: 'LD-48219',
-    text: 'Carrier name on the document does not match any MC on file',
+    text: 'No carrier suggested — two ran this lane at the same rate',
     tone: 'review'
   },
   {
@@ -116,7 +140,7 @@ export const INSIGHTS = {
   timeBefore: '11 min 20 sec',
   timeAfter: '40 sec',
   autoFilled: 94,
-  autoFilledNote: '10.3 of 11 fields on an average load',
+  autoFilledNote: '8.5 of 9 tender fields on an average load',
   touched: 6,
   fraudFlags: 6,
   marginFlags: 11,
@@ -137,7 +161,7 @@ export const INSIGHTS = {
   ],
   recommendations: [
     {
-      title: 'Two customers keep sending rate cons as scanned images',
+      title: 'Two customers keep sending tenders as scanned images',
       body:
         'Rio Grande Produce and Cortez Building Products send flattened scans instead of text PDFs. Those two take about 40% longer to read and account for 5 of the 6 low-confidence commodity fields this month. Ask them to send the original PDF and both go to full confidence.',
       action: 'Draft the request'

@@ -1279,7 +1279,8 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* six steps, one row — the whole round trip has to read at a glance */
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1291,8 +1292,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 14px 13px 16px;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px 10px 12px 13px;
   border-right: 1px solid var(--line);
 }
 
@@ -1301,8 +1303,8 @@
 }
 
 .step__dot {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex: none;
   display: grid;
   place-items: center;
@@ -1322,22 +1324,26 @@
   font-weight: 500;
 }
 
+.step__text {
+  min-width: 0;
+}
+
 .step__text strong {
   display: block;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
   color: var(--muted);
-  white-space: nowrap;
 }
 
 .step__text em {
   display: block;
   font-style: normal;
-  font-size: 11px;
+  font-size: 10.5px;
+  line-height: 1.3;
   color: var(--muted);
   opacity: 0.75;
-  white-space: nowrap;
 }
 
 .step.is-done .step__dot {
@@ -1964,6 +1970,246 @@ select.ctl {
 .commit__lock svg {
   width: 15px;
   height: 15px;
+}
+
+/* --------------------------------------------------------------------------
+   Load detail — the outbound rate confirmation
+   -------------------------------------------------------------------------- */
+
+.ratecon {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.ratecon.is-sent {
+  border-color: var(--cleared-edge);
+}
+
+.ratecon__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-sunk);
+}
+
+.ratecon__title h3 {
+  margin-top: 6px;
+  font-size: 16px;
+}
+
+.ratecon__title p {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 74ch;
+}
+
+.ratecon__typed {
+  flex: none;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: var(--cleared-wash);
+  border: 1px solid var(--cleared-edge);
+  color: var(--cleared-ink);
+}
+
+.ratecon__empty {
+  padding: 30px 20px 34px;
+  text-align: center;
+}
+
+.ratecon__empty strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.ratecon__empty p {
+  margin: 6px auto 0;
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 46ch;
+}
+
+.ratecon__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 0;
+  align-items: stretch;
+}
+
+.ratecon__paper {
+  padding: 20px;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--text-2);
+  white-space: pre;
+  overflow-x: auto;
+  border-right: 1px solid var(--line);
+}
+
+.ratecon__side {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface-sunk);
+}
+
+.ratecon__to strong {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.ratecon__mc,
+.ratecon__email {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.ratecon__guard {
+  display: flex;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+.ratecon__guard .commit__lock svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ratecon__btn {
+  width: 100%;
+  height: 42px;
+}
+
+.ratecon__block {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+
+.ratecon__after {
+  padding: 12px 13px;
+  border-radius: var(--r-sm);
+  background: var(--cleared-wash);
+  border: 1px solid var(--cleared-edge);
+}
+
+.ratecon__after strong {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cleared-ink);
+}
+
+.ratecon__after p {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* --------------------------------------------------------------------------
+   Dashboard — the three-automation round trip
+   -------------------------------------------------------------------------- */
+
+.trip__grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.trip__card {
+  position: relative;
+  padding: 18px 20px 20px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.trip__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.trip__step {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--signal-deep);
+}
+
+.trip__kind {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--signal-wash);
+  border: 1px solid var(--signal-edge);
+  color: var(--signal-ink);
+}
+
+.trip__card h3 {
+  font-size: 16px;
+}
+
+.trip__card p {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.trip__arrow {
+  position: absolute;
+  right: -13px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--signal-deep);
+  font-size: 13px;
+}
+
+/* the "you assign these" divider inside the form */
+.formsplit__note {
+  margin-top: 5px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--muted);
 }
 
 /* --------------------------------------------------------------------------
@@ -2598,10 +2844,30 @@ select.ctl {
   .ba__arrow {
     transform: rotate(90deg);
   }
+  /* only once six across genuinely cannot fit */
   .stepper {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .step {
+    border-bottom: 1px solid var(--line);
+  }
+  .step:nth-child(n + 4) {
+    border-bottom: none;
+  }
+  .trip__grid {
+    grid-template-columns: 1fr;
+  }
+  .trip__arrow {
+    right: 50%;
+    top: auto;
+    bottom: -13px;
+    transform: translateX(50%) rotate(90deg);
+  }
+  .ratecon__body {
+    grid-template-columns: 1fr;
+  }
+  .ratecon__paper {
+    border-right: none;
     border-bottom: 1px solid var(--line);
   }
 }

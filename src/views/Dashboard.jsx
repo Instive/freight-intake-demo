@@ -1,4 +1,4 @@
-import { ACTIVITY, BEFORE_AFTER, KPIS, WEEKLY_HOURS } from '../data/insights.js'
+import { ACTIVITY, BEFORE_AFTER, KPIS, ROUND_TRIP, WEEKLY_HOURS } from '../data/insights.js'
 
 export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
   const needsYou = loads.filter((l) => l.status !== 'cleared')
@@ -53,8 +53,8 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
       {/* ---- before / after ---- */}
       <section className="ba">
         <header className="sec__head">
-          <h2>Where the eleven minutes went</h2>
-          <p>The same load, entered the old way and the new way.</p>
+          <h2>Where the seventeen minutes went</h2>
+          <p>The same load, handled the old way and the new way.</p>
         </header>
         <div className="ba__grid">
           <BaCard data={BEFORE_AFTER.before} tone="before" />
@@ -113,6 +113,34 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* ---- the round trip, as the closing note ---- */}
+      <section className="trip">
+        <header className="sec__head">
+          <h2>One load, start to finish</h2>
+          <p>
+            Three automations on the same screen: a document comes in, a decision gets
+            made, a document goes out.
+          </p>
+        </header>
+        <div className="trip__grid">
+          {ROUND_TRIP.map((t, i) => (
+            <article key={t.step} className="trip__card">
+              <div className="trip__top">
+                <span className="trip__step mono">{t.step}</span>
+                <span className="trip__kind mono">{t.kind}</span>
+              </div>
+              <h3>{t.title}</h3>
+              <p>{t.body}</p>
+              {i < ROUND_TRIP.length - 1 && (
+                <span className="trip__arrow" aria-hidden="true">
+                  →
+                </span>
+              )}
+            </article>
+          ))}
+        </div>
       </section>
     </div>
   )

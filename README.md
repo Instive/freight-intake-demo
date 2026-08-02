@@ -1,8 +1,15 @@
 # Instive · Freight Intake — sales demo
 
-An interactive demo of automated load intake for a US freight brokerage. Rate
-confirmations arrive in an inbox; the agent reads them, fills in the load record,
-checks the carrier, works out the margin, and hands a draft to a human to approve.
+An interactive demo of automated load handling for a US freight brokerage. Three
+connected automations, all on one screen — a document comes in, a decision gets made,
+a document goes out:
+
+1. **Extraction** — a customer's **load tender** arrives, the agent reads nine fields
+   off it and pre-fills an ITS Dispatch load.
+2. **Validation** — you assign the carrier; FMCSA and insurance checks fire and the
+   margin is calculated against your 12% floor.
+3. **Generation** — the **rate confirmation** writes itself from the approved record
+   and waits for you to send it. No reading, no OCR, nothing to get wrong.
 
 Everything is hardcoded. No backend, no API calls, no network requests.
 
@@ -16,7 +23,7 @@ npm run dev
 The top of **Load Queue** shows both intake sources side by side:
 
 - **Email inbox** — watched, reads tenders as they arrive.
-- **Upload a rate confirmation** — drop a PDF onto the card or click *Choose a PDF*.
+- **Upload a load tender** — drop a PDF onto the card or click *Choose a PDF*.
 
 An uploaded PDF creates a load and goes straight to the same read-and-review screen an
 emailed tender lands on. The real filename and size are shown throughout; the extracted
@@ -33,9 +40,17 @@ runs a visible ~1.8s read of the document before the form appears.
 | `LD-48226` | The fraud catch. Three specific checks failed on Swiftline Inc. Push is blocked until you press **Mark as reviewed**. |
 | `LD-48231` | The thin margin. 6.8% against a 12% floor, flagged right beside the figure. Still pushable, but never a surprise. |
 
-On the left of every detail view is the original rate confirmation with the
-extracted text highlighted. Hover or click a highlight to jump to the field it
-filled — that link is the proof the numbers were not invented.
+The detail view runs left to right, then down: the **load tender** that arrived, the
+**draft record** you check, and the **rate confirmation** that writes itself from it.
+Hover or click a highlight in the tender to jump to the field it filled — that link is
+the proof the numbers were not invented.
+
+Two details worth pointing at during a demo: the tender never names a carrier or a
+carrier rate (the broker decides both), and the generated rate con never shows the
+customer's rate — the carrier sees what the carrier is paid and nothing else.
+
+**Send to carrier** unlocks only after the load is approved and pushed, so the round
+trip stays in order.
 
 `Esc` returns to the queue from any load.
 

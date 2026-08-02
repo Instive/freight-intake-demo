@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   buildDocument,
+  buildRateCon,
+  carrierEmail,
   fileSize,
   marginOf,
   money,
@@ -14,7 +16,7 @@ import { CARRIERS, CUSTOMERS, EQUIPMENT, MARGIN_THRESHOLD, carrierById } from '.
    -------------------------------------------------------------------------- */
 const stagesFor = (uploaded) => [
   {
-    label: 'Reading rate confirmation',
+    label: 'Reading the load tender',
     detail: uploaded
       ? 'Opening the PDF you uploaded'
       : 'Opening the PDF attached to the email'
@@ -29,9 +31,10 @@ const STAGE_MS = 450
 const STEPS = [
   { key: 'received', label: 'Tender received', plain: 'Document in' },
   { key: 'extracted', label: 'Extracted', plain: 'Document read' },
-  { key: 'carrier', label: 'Carrier assigned', plain: 'Carrier matched' },
+  { key: 'carrier', label: 'Carrier assigned', plain: 'You decide' },
   { key: 'review', label: 'Review', plain: 'Your check' },
-  { key: 'pushed', label: 'Pushed to TMS', plain: 'In ITS Dispatch' }
+  { key: 'pushed', label: 'Pushed to TMS', plain: 'In ITS Dispatch' },
+  { key: 'sent', label: 'Rate con sent', plain: 'Document out' }
 ]
 
 /* --------------------------------------------------------------------------
@@ -56,6 +59,10 @@ function initialValues(load) {
   }
 }
 
+/* how many of the last 10 loads on this lane the suggested carrier ran —
+   deterministic so the number never changes between renders */
+const lanePriors = (load) => 4 + (Number(load.id.replace(/\D/g, '')) % 5)
+
 /* what the AI says it read, per field — shown under every control */
 function aiNote(load, key) {
   const conf = load.extract[key]?.confidence
@@ -78,29 +85,50 @@ function aiNote(load, key) {
     case 'equipment':
       return `Read the trailer line and mapped it to ${load.equipment} · ${pct}`
     case 'customerRate':
-      return `Read "${money(load.customerRate)}" from the rates block · ${pct}`
-    case 'carrierRate':
-      return `Read "${money(load.carrierRate)}" from the rates block · ${pct}`
+      return `Read "${money(load.customerRate)}" from the rate block · ${pct}`
+
+    /* The two fields below are not on the tender at all — the broker decides
+       them. The agent suggests, it never assigns. */
     case 'carrier': {
       const c = carrierById(load.carrierId)
       return c
-        ? `Matched to ${c.name} (${c.mc}) in ITS Dispatch · ${pct}`
-        : load.notes?.carrier || 'No confident match found.'
+        ? `Suggested from your lane history — ${c.name} ran ${lanePriors(load)} of your last 10 loads on ${load.pickupCity} → ${load.deliveryCity}. Confirm or change it.`
+        : load.notes?.carrier || 'No carrier suggested. Pick one from your ITS Dispatch list.'
+    }
+    case 'carrierRate': {
+      const c = carrierById(load.carrierId)
+      return c
+        ? `The rate you agreed with ${c.name}. Not from the tender — the customer never sees this number.`
+        : 'What you pay the carrier. Set this once a carrier is assigned.'
     }
     default:
       return ''
   }
 }
 
+const ASSIGNED = new Set(['carrier', 'carrierRate'])
+
 function chipFor(load, key, source) {
-  if (source === 'manual') return { tone: 'ok', text: 'You mapped this' }
+  if (source === 'manual') {
+    return { tone: 'ok', text: key === 'carrier' ? 'You assigned this' : 'You set this' }
+  }
+  if (key === 'carrier') {
+    return load.carrierId
+      ? { tone: 'warn', text: 'Suggested · confirm' }
+      : { tone: 'bad', text: 'Needs your input' }
+  }
+  if (key === 'carrierRate') return { tone: 'ok', text: 'Agreed rate' }
+
   const conf = load.extract[key]?.confidence
   if (conf === null || conf === undefined) return { tone: 'bad', text: 'Needs your input' }
   if (conf >= 95) return { tone: 'ok', text: `Confident · ${conf}%` }
   return { tone: 'warn', text: `Double-check · ${conf}%` }
 }
 
-const MANUAL_NOTE = 'Manually mapped · remembered for this customer'
+const manualNote = (key) =>
+  ASSIGNED.has(key)
+    ? 'Set by you · remembered for this lane'
+    : 'Manually corrected · remembered for this customer'
 
 /* digits in state, thousands separators on screen */
 const grouped = (s) => (s === '' ? '' : Number(s).toLocaleString('en-US'))
@@ -121,6 +149,8 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
   const [flagsReviewed, setFlagsReviewed] = useState(Boolean(record?.flagsReviewed))
   const [pushed, setPushed] = useState(Boolean(record?.pushed))
   const [pushing, setPushing] = useState(false)
+  const [sent, setSent] = useState(Boolean(record?.sent))
+  const [sending, setSending] = useState(false)
   const [activeField, setActiveField] = useState(null)
 
   const uploaded = load.source === 'upload'
@@ -168,12 +198,13 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
   }
 
   const stepState = (index) => {
+    if (index === 5) return sent ? 'done' : pushed ? 'active' : 'idle'
+    if (index === 4) return pushed ? 'done' : 'idle'
     if (pushed) return 'done'
     if (index === 0) return 'done'
     if (index === 1) return doneProcessing ? 'done' : 'active'
     if (index === 2) return values.carrierId ? 'done' : doneProcessing ? 'active' : 'idle'
-    if (index === 3) return doneProcessing && values.carrierId ? 'active' : 'idle'
-    return 'idle'
+    return doneProcessing && values.carrierId ? 'active' : 'idle'
   }
 
   const handlePush = () => {
@@ -201,6 +232,25 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
         title: `${load.id} is in ITS Dispatch`,
         body: `${values.pickupCity}, ${values.pickupState} → ${values.deliveryCity}, ${values.deliveryState} · ${carrier ? carrier.name : 'carrier'} · ${money(margin.dollars)} margin.`,
         audit: `AUDIT · ${load.id} · APPROVED BY D. WHITAKER · ${stamp} · 11 FIELDS WRITTEN`
+      })
+    }, 900)
+  }
+
+  const handleSend = () => {
+    if (!pushed || sending || sent || !carrier) return
+    setSending(true)
+    setTimeout(() => {
+      setSending(false)
+      setSent(true)
+      onSave(load.id, { sent: true })
+      const stamp = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit'
+      })
+      onToast({
+        title: `Rate con sent to ${carrier.name}`,
+        body: `Written from ${load.id} — nobody typed it. ${carrierEmail(carrier)} at ${stamp}.`,
+        audit: `AUDIT · ${load.id} · RATE CON SENT BY D. WHITAKER · ${stamp} · AWAITING SIGNATURE`
       })
     }, 900)
   }
@@ -278,7 +328,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <span className="detail__meta">
               {uploaded
                 ? `Uploaded ${load.receivedAt.toLowerCase()} from ${load.fileName}`
-                : `Rate con received ${load.receivedAt}`}
+                : `Tender received ${load.receivedAt}`}
             </span>
           </div>
           <h2 className="detail__lane">
@@ -296,7 +346,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
       {/* ---- stepper ---- */}
       <ol className="stepper">
         {STEPS.map((s, i) => {
-          const state = i === 4 ? (pushed ? 'done' : 'idle') : stepState(i)
+          const state = stepState(i)
           return (
             <li key={s.key} className={`step is-${state}`}>
               <span className="step__dot">
@@ -365,10 +415,11 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
         <section className="panel panel--doc">
           <div className="panel__head">
             <div>
-              <h3>{uploaded ? 'The PDF you uploaded' : 'What arrived in the inbox'}</h3>
+              <span className="label">Step 1 · Document in</span>
+              <h3>{uploaded ? 'The load tender you uploaded' : 'The load tender that arrived'}</h3>
               <p>
-                The original rate confirmation. Highlighted text is what the agent used —
-                click any highlight to jump to the field it filled.
+                Sent by your customer. Highlighted text is what the agent used — click any
+                highlight to jump to the field it filled.
               </p>
               {uploaded && (
                 <span className="filetag mono">
@@ -422,6 +473,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
         <section className="panel panel--form">
           <div className="panel__head">
             <div>
+              <span className="label">Step 2 · Your decision</span>
               <h3>The draft load record</h3>
               <p>
                 This is what will be created in ITS Dispatch. Change anything you disagree
@@ -432,11 +484,11 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
 
           <div className="fillbar">
             <span className="fillbar__stat">
-              <strong className="num">{values.carrierId ? 11 : 10}</strong> of{' '}
-              <strong className="num">11</strong> fields filled in for you
+              <strong className="num">9</strong> of <strong className="num">9</strong>{' '}
+              tender fields read for you · <strong className="num">2</strong> for you to set
             </span>
             {!values.carrierId && (
-              <span className="fillbar__need mono">1 NEEDS YOUR INPUT</span>
+              <span className="fillbar__need mono">CARRIER NEEDED</span>
             )}
           </div>
 
@@ -605,14 +657,10 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               </Field>
             </div>
 
-            <div className="formsplit">
-              <span className="label">Money</span>
-            </div>
-
             <Field
               fieldKey="customerRate"
               label="What the customer pays you"
-              help="Linehaul, all in"
+              help="Linehaul, all in — straight off the tender"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -633,6 +681,14 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                 />
               </div>
             </Field>
+
+            <div className="formsplit">
+              <span className="label">You assign these — not on the tender</span>
+              <p className="formsplit__note">
+                The customer tells you what the load is worth. Who hauls it and what they
+                get paid is your call.
+              </p>
+            </div>
 
             <Field
               fieldKey="carrier"
@@ -746,6 +802,90 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
           </div>
         </section>
       </div>
+
+      {/* ---- 3. document out: the rate con, written not read ---- */}
+      <section className={`ratecon${sent ? ' is-sent' : ''}`}>
+        <div className="ratecon__head">
+          <div className="ratecon__title">
+            <span className="label">Step 3 · Document out</span>
+            <h3>Rate confirmation for the carrier</h3>
+            <p>
+              No reading, no guessing. Every line below is written from the record you
+              just checked, so the two can never disagree.
+            </p>
+          </div>
+          <span className="ratecon__typed mono">0 FIELDS TYPED BY HAND</span>
+        </div>
+
+        {!carrier ? (
+          <div className="ratecon__empty">
+            <strong>Assign a carrier and this writes itself.</strong>
+            <p>
+              There is nobody to send a rate confirmation to yet. Pick a carrier above and
+              the document below fills in.
+            </p>
+          </div>
+        ) : (
+          <div className="ratecon__body">
+            <div className="ratecon__paper mono">
+              {buildRateCon(load, values, carrier).map((line, i) =>
+                line === null ? (
+                  <div key={i} className="doc__blank" />
+                ) : (
+                  <div key={i} className="doc__line">
+                    {line.map((part, j) => (
+                      <span key={j}>{part}</span>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+
+            <aside className="ratecon__side">
+              <div className="ratecon__to">
+                <span className="label">Goes to</span>
+                <strong>{carrier.name}</strong>
+                <span className="mono ratecon__mc">{carrier.mc}</span>
+                <span className="mono ratecon__email">{carrierEmail(carrier)}</span>
+              </div>
+
+              <p className="ratecon__guard">
+                <span className="commit__lock" aria-hidden="true">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <rect x="3.2" y="7" width="9.6" height="6.4" rx="1.4" />
+                    <path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7" />
+                  </svg>
+                </span>
+                The customer's rate is not on this document. The carrier sees{' '}
+                {money(values.carrierRate)} and nothing else.
+              </p>
+
+              <button
+                className="btn btn--primary ratecon__btn"
+                onClick={handleSend}
+                disabled={!pushed || sending || sent}
+              >
+                {sending && <span className="spinner" />}
+                {sending ? 'Sending…' : sent ? 'Sent to carrier' : 'Send to carrier'}
+              </button>
+
+              {!pushed && (
+                <span className="ratecon__block mono">APPROVE THE LOAD FIRST</span>
+              )}
+
+              {sent && (
+                <div className="ratecon__after">
+                  <strong>Waiting on the signed copy.</strong>
+                  <p>
+                    When {carrier.name} signs and sends it back, it is matched to {load.id}{' '}
+                    and the carrier is marked confirmed. Nobody files it by hand.
+                  </p>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+      </section>
     </div>
   )
 }
@@ -757,7 +897,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
 function Field({ fieldKey, label, help, load, sources, children, onFocusField, invalid }) {
   const source = sources[fieldKey] === 'manual' ? 'manual' : 'ai'
   const chip = chipFor(load, fieldKey, source)
-  const note = source === 'manual' ? MANUAL_NOTE : aiNote(load, fieldKey)
+  const note = source === 'manual' ? manualNote(fieldKey) : aiNote(load, fieldKey)
 
   return (
     <div

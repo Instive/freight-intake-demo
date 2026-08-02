@@ -32,8 +32,6 @@ export const LOADS = [
     customerRate: 3184,
     carrierRate: 2615,
     carrierId: null, // ← deliberately unmapped
-    docCarrierName: 'R.G.T. Transport Services LLC',
-    docCarrierMc: 'MC-7845 12',
     docContact: '(956) 555-0142',
     fromEmail: 'tenders@riograndeproduce.com',
     poRef: 'PO-771208',
@@ -48,13 +46,11 @@ export const LOADS = [
       commodity: hi(96),
       weight: hi(99),
       equipment: hi(98),
-      customerRate: hi(99),
-      carrier: { confidence: null },
-      carrierRate: hi(98)
+      customerRate: hi(99)
     },
     notes: {
       carrier:
-        'Document says "R.G.T. Transport Services LLC" with a broken MC number. Two carriers in ITS Dispatch are a partial match, so nothing was assumed.'
+        'No carrier suggested. Two carriers ran Laredo → Chicago in the last 90 days at rates within $40 of each other, so neither is a clear default. Pick one and it will be remembered for this lane.'
     }
   },
 
@@ -93,15 +89,13 @@ export const LOADS = [
       commodity: hi(95),
       weight: hi(99),
       equipment: hi(97),
-      customerRate: hi(99),
-      carrier: hi(91),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     },
     flags: [
       {
         title: 'Sender email domain does not match FMCSA registration',
         detail:
-          'The rate con came from swiftline-inc.com. The domain registered to MC-556214 with FMCSA is swiftlineinc.com. One character apart — a common double-brokering setup.'
+          'The tender naming this carrier came from swiftline-inc.com. The domain registered to MC-556214 with FMCSA is swiftlineinc.com. One character apart — a common double-brokering setup.'
       },
       {
         title: 'Certificate of insurance expires in 3 days',
@@ -151,9 +145,7 @@ export const LOADS = [
       commodity: hi(94),
       weight: hi(99),
       equipment: hi(99),
-      customerRate: hi(99),
-      carrier: hi(97),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
 
@@ -192,9 +184,7 @@ export const LOADS = [
       commodity: hi(96),
       weight: hi(99),
       equipment: hi(99),
-      customerRate: hi(99),
-      carrier: hi(98),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
   {
@@ -231,9 +221,7 @@ export const LOADS = [
       commodity: hi(95),
       weight: hi(99),
       equipment: hi(98),
-      customerRate: hi(99),
-      carrier: hi(99),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
   {
@@ -271,9 +259,7 @@ export const LOADS = [
       commodity: hi(97),
       weight: hi(99),
       equipment: hi(99),
-      customerRate: hi(99),
-      carrier: hi(99),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
   {
@@ -310,9 +296,7 @@ export const LOADS = [
       commodity: hi(93),
       weight: hi(99),
       equipment: hi(97),
-      customerRate: hi(99),
-      carrier: hi(98),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
   {
@@ -349,9 +333,7 @@ export const LOADS = [
       commodity: hi(92),
       weight: hi(99),
       equipment: hi(96),
-      customerRate: hi(99),
-      carrier: hi(97),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   },
   {
@@ -389,9 +371,7 @@ export const LOADS = [
       commodity: hi(94),
       weight: hi(99),
       equipment: hi(99),
-      customerRate: hi(99),
-      carrier: hi(99),
-      carrierRate: hi(98)
+      customerRate: hi(99)
     }
   },
   {
@@ -428,9 +408,7 @@ export const LOADS = [
       commodity: hi(91),
       weight: hi(99),
       equipment: hi(98),
-      customerRate: hi(99),
-      carrier: hi(98),
-      carrierRate: hi(99)
+      customerRate: hi(99)
     }
   }
 ]
@@ -477,9 +455,7 @@ const UPLOAD_BASE = {
     commodity: hi(96),
     weight: hi(99),
     equipment: hi(98),
-    customerRate: hi(99),
-    carrier: hi(96),
-    carrierRate: hi(99)
+    customerRate: hi(99)
   }
 }
 
@@ -542,38 +518,42 @@ export const marginOf = (customerRate, carrierRate) => {
 }
 
 /* ---------------------------------------------------------------------------
-   The rate confirmation itself.
+   1. INBOUND — the load tender.
+
+   This is what the customer sends. It describes the freight and what they will
+   pay. It does NOT name a carrier and it never shows what a carrier gets paid —
+   picking and pricing the carrier is the broker's job.
 
    Returns lines of parts. A part is either a plain string or
-   { f: <fieldKey>, t: <text> } — the spans the AI pulled values from, which the
-   detail view highlights and cross-links to the form on the right.
+   { f: <fieldKey>, t: <text> } — the spans the AI read values from, which the
+   detail view highlights and cross-links to the form beside it.
    --------------------------------------------------------------------------- */
 
+const L = (...parts) => parts
+const BLANK = null
+
+const equipLine = (load) =>
+  (load.equipment === 'Reefer'
+    ? "53' Reefer"
+    : load.equipment === 'Dry Van'
+      ? "53' Dry Van"
+      : `48' ${load.equipment}`) + (load.tempSpec ? `  (${load.tempSpec})` : '')
+
 export function buildDocument(load) {
-  const carrier = load.carrierId ? carrierById(load.carrierId) : null
-  const carrierName = load.docCarrierName || (carrier ? carrier.name : '—')
-  const carrierMc = load.docCarrierMc || (carrier ? carrier.mc : '—')
-  const equipLine =
-    (load.equipment === 'Reefer' ? "53' Reefer" : load.equipment === 'Dry Van' ? "53' Dry Van" : `48' ${load.equipment}`) +
-    (load.tempSpec ? `  (${load.tempSpec})` : '')
-
-  const L = (...parts) => parts
-  const BLANK = null
-
   const origin =
     load.source === 'upload'
       ? [L(`File:     ${load.fileName}`), L(`Uploaded: ${load.receivedAt} · by D. Whitaker`)]
       : [L(`From:     ${load.fromEmail}`), L(`Received: ${load.receivedAt}`)]
 
   return [
-    L('RATE CONFIRMATION — SHEET 1 OF 1'),
+    L('LOAD TENDER — SHEET 1 OF 1'),
     L('────────────────────────────────────────────────────────'),
     ...origin,
     L(
-      `Subject:  RATE CON // ${load.pickupCity.toUpperCase()} ${load.pickupState} -> ${load.deliveryCity.toUpperCase()} ${load.deliveryState}`
+      `Subject:  TENDER // ${load.pickupCity.toUpperCase()} ${load.pickupState} -> ${load.deliveryCity.toUpperCase()} ${load.deliveryState}`
     ),
     BLANK,
-    L(`Broker Ref:   ${load.id}`),
+    L(`Tender #:     ${load.poRef.replace('PO-', 'TND-')}`),
     L(`Customer PO:  ${load.poRef}`),
     BLANK,
     L('SHIPPER / CUSTOMER'),
@@ -591,19 +571,84 @@ export function buildDocument(load) {
     L('FREIGHT'),
     L('  Commodity:  ', { f: 'commodity', t: load.commodity }),
     L('  Weight:     ', { f: 'weight', t: `${Number(load.weight).toLocaleString('en-US')} lbs` }),
-    L('  Equipment:  ', { f: 'equipment', t: equipLine }),
+    L('  Equipment:  ', { f: 'equipment', t: equipLine(load) }),
     L(`  Pieces:     ${load.pieces}`),
     BLANK,
-    L('CARRIER'),
-    L('  ', { f: 'carrier', t: carrierName }),
-    L('  ', { f: 'carrier', t: carrierMc }, `    Contact: ${load.docContact}`),
-    BLANK,
-    L('RATES'),
+    L('RATE'),
     L('  Customer, linehaul all-in:  ', { f: 'customerRate', t: money2(load.customerRate) }),
-    L('  Carrier, linehaul all-in:   ', { f: 'carrierRate', t: money2(load.carrierRate) }),
     L('  Detention after 2 hrs:      $45.00/hr'),
     BLANK,
-    L('Signed rate con on file. Do not exceed the contracted rate'),
-    L('without written approval from the broker.')
+    L('Accept in writing before dispatching. Carrier selection'),
+    L("is at the broker's discretion.")
   ]
 }
+
+/* ---------------------------------------------------------------------------
+   2. OUTBOUND — the rate confirmation.
+
+   Nothing is read here. Every line is written from the load record the user
+   just approved, so it cannot disagree with what is in ITS Dispatch.
+
+   Note what is absent: the customer's rate. The carrier is shown what the
+   carrier is paid and nothing else.
+   --------------------------------------------------------------------------- */
+
+export const carrierEmail = (carrier) =>
+  carrier ? `dispatch@${carrier.name.toLowerCase().replace(/[^a-z]/g, '')}.com` : ''
+
+export function buildRateCon(load, values, carrier) {
+  const today = new Date().toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+
+  return [
+    L('RATE CONFIRMATION — SHEET 1 OF 1'),
+    L('────────────────────────────────────────────────────────'),
+    L(`To:       ${carrierEmail(carrier)}`),
+    L('From:     D. Whitaker · Whitaker Logistics'),
+    L(`Date:     ${today}`),
+    BLANK,
+    L(`Load #:       ${load.id}`),
+    L(`Customer PO:  ${load.poRef}`),
+    BLANK,
+    L('CARRIER'),
+    L(`  ${carrier ? carrier.name : '—'}`),
+    L(`  ${carrier ? carrier.mc : '—'}`),
+    BLANK,
+    L('PICKUP'),
+    L(`  ${values.pickupCity}, ${values.pickupState} ${load.pickupZip}`),
+    L(`  ${safeLong(values.pickupDate)}    ${load.pickupWindow}`),
+    BLANK,
+    L('DELIVERY'),
+    L(`  ${values.deliveryCity}, ${values.deliveryState} ${load.deliveryZip}`),
+    L(`  ${safeLong(values.deliveryDate)}    ${load.deliveryWindow}`),
+    BLANK,
+    L('FREIGHT'),
+    L(`  Commodity:  ${values.commodity}`),
+    L(`  Weight:     ${Number(values.weight || 0).toLocaleString('en-US')} lbs`),
+    L(`  Equipment:  ${values.equipment}`),
+    L(`  Pieces:     ${load.pieces}`),
+    BLANK,
+    L('CARRIER PAY'),
+    L(`  Linehaul, all-in:       ${money2(values.carrierRate || 0)}`),
+    L('  Detention after 2 hrs:  $45.00/hr'),
+    BLANK,
+    L('TERMS'),
+    L('  Invoice with the signed BOL and this confirmation.'),
+    L('  No double-brokering. No reconsignment without written'),
+    L('  approval. Insurance must stay current through delivery.'),
+    BLANK,
+    L('  Signature: ____________________   Date: __________')
+  ]
+}
+
+const safeLong = (iso) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(iso)
+    ? new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      })
+    : '—'

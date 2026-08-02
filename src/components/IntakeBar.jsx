@@ -13,7 +13,7 @@ export default function IntakeBar({ emailCount, onUpload }) {
     const isPdf =
       file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
     if (!isPdf) {
-      setError(`"${file.name}" is not a PDF. Rate confirmations must be PDF files.`)
+      setError(`"${file.name}" is not a PDF. Load tenders must be PDF files.`)
       return
     }
     setError(null)
@@ -43,7 +43,7 @@ export default function IntakeBar({ emailCount, onUpload }) {
           </div>
           <p className="intake__sub mono">TENDERS@WHITAKERLOGISTICS.COM</p>
           <p className="intake__note">
-            <strong className="num">{emailCount}</strong> rate confirmations read
+            <strong className="num">{emailCount}</strong> load tenders read
             automatically today. Nothing to do — they arrive already filled in.
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function IntakeBar({ emailCount, onUpload }) {
         </div>
         <div className="intake__body">
           <div className="intake__titlerow">
-            <h3>Upload a rate confirmation</h3>
+            <h3>Upload a load tender</h3>
           </div>
           <p className="intake__sub mono">PDF · DROP OR BROWSE</p>
           <p className="intake__note">
