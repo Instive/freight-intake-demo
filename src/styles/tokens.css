@@ -1,0 +1,294 @@
+/* ==========================================================================
+   Instive design system — light ground ("warehouse paper by day")
+   One accent rule: Hi-Vis Amber is the only accent. Status colors are
+   reserved for state and are never spent on decoration.
+   ========================================================================== */
+
+:root {
+  /* --- Ground & surfaces ------------------------------------------------ */
+  --paper: #f5f2ea; /* Warehouse Paper — app ground */
+  --surface: #ffffff; /* card / panel */
+  --surface-sunk: #faf8f2; /* insets, table headers, code blocks */
+  --ink: #0e1a24; /* Freight Slate — primary text + dark rail */
+  --ink-2: #16252f; /* Raised Slate */
+  --ink-3: #1f313c; /* Edge Slate */
+
+  /* --- Text ------------------------------------------------------------- */
+  --text: #0e1a24;
+  --text-2: #46596a; /* secondary body */
+  --muted: #6d7f8b; /* Muted Steel, darkened for paper */
+  --on-dark: #f5f2ea;
+  --on-dark-dim: #a9b6bf;
+
+  /* --- Accent (the only one) -------------------------------------------- */
+  --signal: #ffb23e; /* Hi-Vis Amber — fills, CTA */
+  --signal-deep: #e8941a; /* Deep Amber — amber on light, hover */
+  --signal-ink: #8a5406; /* readable amber text on paper */
+  --signal-wash: #fff5e4; /* amber tint ground */
+  --signal-edge: #f4d9a6;
+
+  /* --- Status (reserved) ------------------------------------------------ */
+  --cleared: #5bd6a6;
+  --cleared-ink: #12724f;
+  --cleared-wash: #e6f8f0;
+  --cleared-edge: #b6e6d1;
+
+  --hold: #ff6b5e;
+  --hold-ink: #b32b1d;
+  --hold-wash: #ffefed;
+  --hold-edge: #f7c4bd;
+
+  /* --- Lines ------------------------------------------------------------ */
+  --line: #e2ddd1; /* hairline on paper */
+  --line-strong: #cfc8b8;
+  --line-ink: rgba(245, 242, 234, 0.12); /* hairline on the dark rail */
+
+  /* --- Type ------------------------------------------------------------- */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- Shape ------------------------------------------------------------ */
+  --r-sm: 4px;
+  --r: 6px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+
+  /* --- Motion ----------------------------------------------------------- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --rail-w: 248px;
+  --page-max: 1120px;
+}
+
+/* --- Reset ---------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.022em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* --- Shared primitives ---------------------------------------------------- */
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+/* small uppercase mono label — used for every field label and metadata line */
+.label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* --- Status pills --------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: var(--r-pill);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.pill--cleared {
+  background: var(--cleared-wash);
+  border-color: var(--cleared-edge);
+  color: var(--cleared-ink);
+}
+
+.pill--review {
+  background: var(--signal-wash);
+  border-color: var(--signal-edge);
+  color: var(--signal-ink);
+}
+
+.pill--hold {
+  background: var(--hold-wash);
+  border-color: var(--hold-edge);
+  color: var(--hold-ink);
+}
+
+.pill--neutral {
+  background: var(--surface-sunk);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+/* --- Buttons -------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: background 0.16s var(--ease), border-color 0.16s var(--ease),
+    transform 0.16s var(--ease), color 0.16s var(--ease);
+}
+
+.btn--primary {
+  background: var(--signal);
+  color: var(--ink);
+  border-color: var(--signal-deep);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--signal-deep);
+  transform: translateY(-1px);
+}
+
+.btn--ghost {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  border-color: var(--ink-3);
+  background: var(--surface-sunk);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  background: #eae5da;
+  color: #9aa3a9;
+  border-color: var(--line);
+  transform: none;
+}
+
+/* --- Focus ---------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 2px solid var(--signal-deep);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* --- Motion primitives ---------------------------------------------------- */
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(14, 26, 36, 0.25);
+  border-top-color: var(--ink);
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
