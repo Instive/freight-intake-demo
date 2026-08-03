@@ -50,7 +50,7 @@ export const LOADS = [
     },
     notes: {
       carrier:
-        'No carrier suggested. Two carriers ran Laredo → Chicago in the last 90 days at rates within $40 of each other, so neither is a clear default. Pick one and it will be remembered for this lane.'
+        'No clear default — two carriers ran this lane within $40 of each other. Pick one.'
     }
   },
 

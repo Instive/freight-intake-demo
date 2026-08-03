@@ -21,9 +21,9 @@ const stagesFor = (uploaded) => [
       ? 'Opening the PDF you uploaded'
       : 'Opening the PDF attached to the email'
   },
-  { label: 'Extracting fields', detail: 'Pulling lane, dates, freight and rates off the page' },
-  { label: 'Matching carrier to ITS Dispatch', detail: 'Checking the name and MC against your carrier list' },
-  { label: 'Scoring confidence', detail: 'Marking anything it is not sure about' }
+  { label: 'Extracting fields', detail: 'Lane, dates, freight and rates' },
+  { label: 'Matching carrier to ITS Dispatch', detail: 'Name and MC against your carrier list' },
+  { label: 'Scoring confidence', detail: 'Flagging anything it is unsure about' }
 ]
 const STAGE_COUNT = 4
 const STAGE_MS = 450
@@ -63,44 +63,48 @@ function initialValues(load) {
    deterministic so the number never changes between renders */
 const lanePriors = (load) => 4 + (Number(load.id.replace(/\D/g, '')) % 5)
 
-/* what the AI says it read, per field — shown under every control */
+/* The hint under each control. It carries the proof — what was read and how
+   sure — and nothing else. Long values are already visible in the control
+   itself, so quoting them back just doubles the reading. */
+const SRC_MAX = 30
+const read = (text, pct) =>
+  text.length > SRC_MAX ? `Read from the tender · ${pct}` : `Read "${text}" · ${pct}`
+
 function aiNote(load, key) {
   const conf = load.extract[key]?.confidence
-  const pct = conf ? `${conf}% match` : null
+  const pct = `${conf}%`
   switch (key) {
     case 'customer':
-      return `Read "${load.customer}" — matched to your ITS Dispatch customer list · ${pct}`
+      return `Matched to your customer list · ${pct}`
     case 'pickup':
-      return `Read "${load.pickupCity}, ${load.pickupState} ${load.pickupZip}" from the pickup block · ${pct}`
+      return read(`${load.pickupCity}, ${load.pickupState} ${load.pickupZip}`, pct)
     case 'pickupDate':
-      return `Read "${shortDate(load.pickupDate)}" from the pickup block · ${pct}`
+      return read(shortDate(load.pickupDate), pct)
     case 'delivery':
-      return `Read "${load.deliveryCity}, ${load.deliveryState} ${load.deliveryZip}" from the delivery block · ${pct}`
+      return read(`${load.deliveryCity}, ${load.deliveryState} ${load.deliveryZip}`, pct)
     case 'deliveryDate':
-      return `Read "${shortDate(load.deliveryDate)}" from the delivery block · ${pct}`
+      return read(shortDate(load.deliveryDate), pct)
     case 'commodity':
-      return `Read "${load.commodity}" from the freight block · ${pct}`
+      return read(load.commodity, pct)
     case 'weight':
-      return `Read "${Number(load.weight).toLocaleString('en-US')} lbs" from the freight block · ${pct}`
+      return read(`${Number(load.weight).toLocaleString('en-US')} lbs`, pct)
     case 'equipment':
-      return `Read the trailer line and mapped it to ${load.equipment} · ${pct}`
+      return `Trailer line → ${load.equipment} · ${pct}`
     case 'customerRate':
-      return `Read "${money(load.customerRate)}" from the rate block · ${pct}`
+      return read(money(load.customerRate), pct)
 
-    /* The two fields below are not on the tender at all — the broker decides
-       them. The agent suggests, it never assigns. */
+    /* Not on the tender — the broker decides these. The agent suggests, it
+       never assigns. */
     case 'carrier': {
       const c = carrierById(load.carrierId)
       return c
-        ? `Suggested from your lane history — ${c.name} ran ${lanePriors(load)} of your last 10 loads on ${load.pickupCity} → ${load.deliveryCity}. Confirm or change it.`
-        : load.notes?.carrier || 'No carrier suggested. Pick one from your ITS Dispatch list.'
+        ? `Suggested — ran ${lanePriors(load)} of your last 10 on this lane`
+        : load.notes?.carrier || 'No suggestion. Pick one from your list.'
     }
-    case 'carrierRate': {
-      const c = carrierById(load.carrierId)
-      return c
-        ? `The rate you agreed with ${c.name}. Not from the tender — the customer never sees this number.`
-        : 'What you pay the carrier. Set this once a carrier is assigned.'
-    }
+    case 'carrierRate':
+      return load.carrierId
+        ? 'Your agreed rate — not on the tender'
+        : 'Set this once a carrier is assigned'
     default:
       return ''
   }
@@ -272,8 +276,8 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                 {uploaded ? `Reading ${load.fileName}` : `Reading the tender for ${load.id}`}
               </h2>
               <p>
-                Nothing is written to ITS Dispatch during this step. The agent only reads
-                the document and prepares a draft for you.
+                Nothing is written to ITS Dispatch. The agent reads the document and
+                prepares a draft for you.
               </p>
             </div>
           </div>
@@ -418,8 +422,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <span className="label">Step 1 · Document in</span>
               <h3>{uploaded ? 'The load tender you uploaded' : 'The load tender that arrived'}</h3>
               <p>
-                Sent by your customer. Highlighted text is what the agent used — click any
-                highlight to jump to the field it filled.
+                Sent by your customer. Click any highlight to jump to the field it filled.
               </p>
               {uploaded && (
                 <span className="filetag mono">
@@ -476,8 +479,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <span className="label">Step 2 · Your decision</span>
               <h3>The draft load record</h3>
               <p>
-                This is what will be created in ITS Dispatch. Change anything you disagree
-                with — your edit wins.
+                What will be created in ITS Dispatch. Change anything you disagree with.
               </p>
             </div>
           </div>
@@ -496,7 +498,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <Field
               fieldKey="customer"
               label="Customer"
-              help="Who is paying for this load"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -603,7 +604,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <Field
               fieldKey="commodity"
               label="What is on the truck"
-              help="Commodity description"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -619,7 +619,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="weight"
                 label="Weight"
-                help="Pounds"
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -640,7 +639,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="equipment"
                 label="Trailer type"
-                help="Equipment needed"
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -660,7 +658,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <Field
               fieldKey="customerRate"
               label="What the customer pays you"
-              help="Linehaul, all in — straight off the tender"
+              help="Linehaul, all in"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -685,15 +683,15 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <div className="formsplit">
               <span className="label">You assign these — not on the tender</span>
               <p className="formsplit__note">
-                The customer tells you what the load is worth. Who hauls it and what they
-                get paid is your call.
+                The customer sets what the load is worth. Who hauls it, and for how much,
+                is your call.
               </p>
             </div>
 
             <Field
               fieldKey="carrier"
               label="Carrier hauling it"
-              help="Picked from your ITS Dispatch carrier list"
+              help="From your ITS Dispatch list"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -810,8 +808,8 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <span className="label">Step 3 · Document out</span>
             <h3>Rate confirmation for the carrier</h3>
             <p>
-              No reading, no guessing. Every line below is written from the record you
-              just checked, so the two can never disagree.
+              Every line is written from the record you just checked. No reading,
+              nothing to get wrong.
             </p>
           </div>
           <span className="ratecon__typed mono">0 FIELDS TYPED BY HAND</span>
@@ -821,8 +819,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
           <div className="ratecon__empty">
             <strong>Assign a carrier and this writes itself.</strong>
             <p>
-              There is nobody to send a rate confirmation to yet. Pick a carrier above and
-              the document below fills in.
+              Pick a carrier above and the document fills in.
             </p>
           </div>
         ) : (
@@ -856,8 +853,8 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                     <path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7" />
                   </svg>
                 </span>
-                The customer's rate is not on this document. The carrier sees{' '}
-                {money(values.carrierRate)} and nothing else.
+                The carrier sees {money(values.carrierRate)}. Your customer's rate is not
+                on this document.
               </p>
 
               <button
@@ -877,8 +874,8 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                 <div className="ratecon__after">
                   <strong>Waiting on the signed copy.</strong>
                   <p>
-                    When {carrier.name} signs and sends it back, it is matched to {load.id}{' '}
-                    and the carrier is marked confirmed. Nobody files it by hand.
+                    It comes back signed, gets matched to {load.id}, and the carrier is
+                    marked confirmed. Nobody files it by hand.
                   </p>
                 </div>
               )}
