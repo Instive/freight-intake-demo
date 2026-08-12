@@ -6,8 +6,7 @@ import {
   fileSize,
   marginOf,
   money,
-  prettyDate,
-  shortDate
+  prettyDate
 } from '../data/loads.js'
 import { CARRIERS, CUSTOMERS, EQUIPMENT, MARGIN_THRESHOLD, carrierById } from '../data/master.js'
 
@@ -59,80 +58,22 @@ function initialValues(load) {
   }
 }
 
-/* how many of the last 10 loads on this lane the suggested carrier ran —
-   deterministic so the number never changes between renders */
-const lanePriors = (load) => 4 + (Number(load.id.replace(/\D/g, '')) % 5)
-
-/* The hint under each control. It carries the proof — what was read and how
-   sure — and nothing else. Long values are already visible in the control
-   itself, so quoting them back just doubles the reading. */
-const SRC_MAX = 30
-const read = (text, pct) =>
-  text.length > SRC_MAX ? `Read from the tender · ${pct}` : `Read "${text}" · ${pct}`
-
-function aiNote(load, key) {
-  const conf = load.extract[key]?.confidence
-  const pct = `${conf}%`
-  switch (key) {
-    case 'customer':
-      return `Matched to your customer list · ${pct}`
-    case 'pickup':
-      return read(`${load.pickupCity}, ${load.pickupState} ${load.pickupZip}`, pct)
-    case 'pickupDate':
-      return read(shortDate(load.pickupDate), pct)
-    case 'delivery':
-      return read(`${load.deliveryCity}, ${load.deliveryState} ${load.deliveryZip}`, pct)
-    case 'deliveryDate':
-      return read(shortDate(load.deliveryDate), pct)
-    case 'commodity':
-      return read(load.commodity, pct)
-    case 'weight':
-      return read(`${Number(load.weight).toLocaleString('en-US')} lbs`, pct)
-    case 'equipment':
-      return `Trailer line → ${load.equipment} · ${pct}`
-    case 'customerRate':
-      return read(money(load.customerRate), pct)
-
-    /* Not on the tender — the broker decides these. The agent suggests, it
-       never assigns. */
-    case 'carrier': {
-      const c = carrierById(load.carrierId)
-      return c
-        ? `Suggested — ran ${lanePriors(load)} of your last 10 on this lane`
-        : load.notes?.carrier || 'No suggestion. Pick one from your list.'
-    }
-    case 'carrierRate':
-      return load.carrierId
-        ? 'Your agreed rate — not on the tender'
-        : 'Set this once a carrier is assigned'
-    default:
-      return ''
-  }
-}
-
-const ASSIGNED = new Set(['carrier', 'carrierRate'])
-
+/* The chip beside each label carries the whole proof in one badge: colour for
+   how it got there, number for how sure the agent is. Anything longer than
+   this wraps the label onto a second line in the narrow columns. */
 function chipFor(load, key, source) {
-  if (source === 'manual') {
-    return { tone: 'ok', text: key === 'carrier' ? 'You assigned this' : 'You set this' }
-  }
+  if (source === 'manual') return { tone: 'ok', text: 'Your edit' }
   if (key === 'carrier') {
     return load.carrierId
-      ? { tone: 'warn', text: 'Suggested · confirm' }
-      : { tone: 'bad', text: 'Needs your input' }
+      ? { tone: 'warn', text: 'Confirm' }
+      : { tone: 'bad', text: 'Needed' }
   }
-  if (key === 'carrierRate') return { tone: 'ok', text: 'Agreed rate' }
+  if (key === 'carrierRate') return { tone: 'ok', text: 'Agreed' }
 
   const conf = load.extract[key]?.confidence
-  if (conf === null || conf === undefined) return { tone: 'bad', text: 'Needs your input' }
-  if (conf >= 95) return { tone: 'ok', text: `Confident · ${conf}%` }
-  return { tone: 'warn', text: `Double-check · ${conf}%` }
+  if (conf === null || conf === undefined) return { tone: 'bad', text: 'Needed' }
+  return { tone: conf >= 95 ? 'ok' : 'warn', text: `${conf}%` }
 }
-
-const manualNote = (key) =>
-  ASSIGNED.has(key)
-    ? 'Set by you · remembered for this lane'
-    : 'Manually corrected · remembered for this customer'
 
 /* digits in state, thousands separators on screen */
 const grouped = (s) => (s === '' ? '' : Number(s).toLocaleString('en-US'))
@@ -489,6 +430,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <strong className="num">9</strong> of <strong className="num">9</strong>{' '}
               tender fields read for you · <strong className="num">2</strong> for you to set
             </span>
+            <span className="fillbar__legend">% = how sure the agent is</span>
             {!values.carrierId && (
               <span className="fillbar__need mono">CARRIER NEEDED</span>
             )}
@@ -888,13 +830,11 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
 }
 
 /* --------------------------------------------------------------------------
-   One mapped control: label, control, confidence chip, and the hint line
-   showing what the AI matched.
+   One mapped control: label, confidence chip, and the control.
    -------------------------------------------------------------------------- */
 function Field({ fieldKey, label, help, load, sources, children, onFocusField, invalid }) {
   const source = sources[fieldKey] === 'manual' ? 'manual' : 'ai'
   const chip = chipFor(load, fieldKey, source)
-  const note = source === 'manual' ? manualNote(fieldKey) : aiNote(load, fieldKey)
 
   return (
     <div
@@ -910,9 +850,6 @@ function Field({ fieldKey, label, help, load, sources, children, onFocusField, i
       </div>
       {help && <span className="field__help">{help}</span>}
       {children}
-      <p className={`hint${source === 'manual' ? ' hint--manual' : ''}${chip.tone === 'bad' ? ' hint--bad' : ''}`}>
-        {note}
-      </p>
     </div>
   )
 }

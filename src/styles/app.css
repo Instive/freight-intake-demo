@@ -1610,7 +1610,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  flex-wrap: wrap;
+  gap: 6px 16px;
   padding: 12px 20px;
   background: var(--signal-wash);
   border-bottom: 1px solid var(--signal-edge);
@@ -1618,9 +1619,21 @@
   color: var(--text-2);
 }
 
+.fillbar__stat {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .fillbar__stat strong {
   font-weight: 500;
   color: var(--text);
+}
+
+/* the chips carry a bare percentage now, so say once what it means */
+.fillbar__legend {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--muted);
 }
 
 .fillbar__need {
@@ -1640,9 +1653,10 @@
   gap: 18px;
 }
 
+/* the right-hand column has to hold "Delivery date" and its chip on one line */
 .row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 184px;
+  grid-template-columns: minmax(0, 1fr) 196px;
   gap: 18px;
   align-items: start;
 }
@@ -1657,11 +1671,12 @@
   min-width: 0;
 }
 
+/* the chip sits against the label, not out at the right edge — on a 600px
+   field a right-aligned badge reads as belonging to nothing */
 .field__top {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 3px;
 }
 
@@ -1671,6 +1686,7 @@
   letter-spacing: -0.01em;
   color: var(--text);
   min-width: 0;
+  white-space: nowrap;
 }
 
 /* the plain-English gloss gets its own line so it never collides with the chip */
@@ -1797,42 +1813,6 @@ select.ctl {
 
 .suffixed .ctl {
   padding-right: 42px;
-}
-
-.hint {
-  margin-top: 6px;
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: var(--muted);
-  padding-left: 15px;
-  position: relative;
-}
-
-.hint::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: rgba(255, 178, 62, 0.5);
-}
-
-.hint--manual {
-  color: var(--cleared-ink);
-}
-
-.hint--manual::before {
-  background: var(--cleared);
-}
-
-.hint--bad {
-  color: var(--hold-ink);
-}
-
-.hint--bad::before {
-  background: var(--hold);
 }
 
 .field--invalid .field__label {
