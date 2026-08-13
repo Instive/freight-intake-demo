@@ -5,8 +5,7 @@ import {
   carrierEmail,
   fileSize,
   marginOf,
-  money,
-  prettyDate
+  money
 } from '../data/loads.js'
 import { CARRIERS, CUSTOMERS, EQUIPMENT, MARGIN_THRESHOLD, carrierById } from '../data/master.js'
 
@@ -28,12 +27,12 @@ const STAGE_COUNT = 4
 const STAGE_MS = 450
 
 const STEPS = [
-  { key: 'received', label: 'Tender received', plain: 'Document in' },
-  { key: 'extracted', label: 'Extracted', plain: 'Document read' },
-  { key: 'carrier', label: 'Carrier assigned', plain: 'You decide' },
-  { key: 'review', label: 'Review', plain: 'Your check' },
-  { key: 'pushed', label: 'Pushed to TMS', plain: 'In ITS Dispatch' },
-  { key: 'sent', label: 'Rate con sent', plain: 'Document out' }
+  { key: 'received', label: 'Tender received' },
+  { key: 'extracted', label: 'Extracted' },
+  { key: 'carrier', label: 'Carrier assigned' },
+  { key: 'review', label: 'Review' },
+  { key: 'pushed', label: 'Pushed to TMS' },
+  { key: 'sent', label: 'Rate con sent' }
 ]
 
 /* --------------------------------------------------------------------------
@@ -78,8 +77,6 @@ function chipFor(load, key, source) {
 /* digits in state, thousands separators on screen */
 const grouped = (s) => (s === '' ? '' : Number(s).toLocaleString('en-US'))
 const digitsOnly = (s) => s.replace(/[^\d]/g, '')
-
-const safePretty = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? prettyDate(iso) : 'No date set')
 
 /* --------------------------------------------------------------------------
    Component
@@ -305,7 +302,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               </span>
               <span className="step__text">
                 <strong>{s.label}</strong>
-                <em>{s.plain}</em>
               </span>
             </li>
           )
@@ -362,9 +358,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <div>
               <span className="label">Step 1 · Document in</span>
               <h3>{uploaded ? 'The load tender you uploaded' : 'The load tender that arrived'}</h3>
-              <p>
-                Sent by your customer. Click any highlight to jump to the field it filled.
-              </p>
+              <p>Click a highlight to jump to the field it filled.</p>
               {uploaded && (
                 <span className="filetag mono">
                   <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
@@ -407,10 +401,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               )}
             </div>
           </div>
-          <div className="doc__legend">
-            <span className="doc__key" />
-            Amber = text the agent lifted into the form. Everything else was ignored.
-          </div>
         </section>
 
         {/* RIGHT — the mapped record */}
@@ -419,9 +409,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <div>
               <span className="label">Step 2 · Your decision</span>
               <h3>The draft load record</h3>
-              <p>
-                What will be created in ITS Dispatch. Change anything you disagree with.
-              </p>
+              <p>What will be created in ITS Dispatch. Change anything you disagree with.</p>
             </div>
           </div>
 
@@ -430,7 +418,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <strong className="num">9</strong> of <strong className="num">9</strong>{' '}
               tender fields read for you · <strong className="num">2</strong> for you to set
             </span>
-            <span className="fillbar__legend">% = how sure the agent is</span>
+            <span className="fillbar__legend">% = agent confidence</span>
             {!values.carrierId && (
               <span className="fillbar__need mono">CARRIER NEEDED</span>
             )}
@@ -459,7 +447,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="pickup"
                 label="Pick up from"
-                help="City and state"
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -484,7 +471,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="pickupDate"
                 label="Pickup date"
-                help={safePretty(values.pickupDate)}
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -502,7 +488,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="delivery"
                 label="Deliver to"
-                help="City and state"
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -527,7 +512,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
               <Field
                 fieldKey="deliveryDate"
                 label="Delivery date"
-                help={safePretty(values.deliveryDate)}
                 load={load}
                 sources={sources}
                 onFocusField={setActiveField}
@@ -600,7 +584,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <Field
               fieldKey="customerRate"
               label="What the customer pays you"
-              help="Linehaul, all in"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -624,16 +607,11 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
 
             <div className="formsplit">
               <span className="label">You assign these — not on the tender</span>
-              <p className="formsplit__note">
-                The customer sets what the load is worth. Who hauls it, and for how much,
-                is your call.
-              </p>
             </div>
 
             <Field
               fieldKey="carrier"
               label="Carrier hauling it"
-              help="From your ITS Dispatch list"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -656,7 +634,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
             <Field
               fieldKey="carrierRate"
               label="What you pay the carrier"
-              help="Linehaul, all in"
               load={load}
               sources={sources}
               onFocusField={setActiveField}
@@ -730,15 +707,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                 </span>
               )}
             </div>
-            <p className="commit__promise">
-              <span className="commit__lock" aria-hidden="true">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <rect x="3.2" y="7" width="9.6" height="6.4" rx="1.4" />
-                  <path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7" />
-                </svg>
-              </span>
-              Nothing posts to ITS Dispatch until you approve.
-            </p>
           </div>
         </section>
       </div>
@@ -749,10 +717,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
           <div className="ratecon__title">
             <span className="label">Step 3 · Document out</span>
             <h3>Rate confirmation for the carrier</h3>
-            <p>
-              Every line is written from the record you just checked. No reading,
-              nothing to get wrong.
-            </p>
           </div>
           <span className="ratecon__typed mono">0 FIELDS TYPED BY HAND</span>
         </div>
@@ -760,9 +724,6 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
         {!carrier ? (
           <div className="ratecon__empty">
             <strong>Assign a carrier and this writes itself.</strong>
-            <p>
-              Pick a carrier above and the document fills in.
-            </p>
           </div>
         ) : (
           <div className="ratecon__body">
@@ -795,8 +756,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
                     <path d="M5.6 7V5.2a2.4 2.4 0 0 1 4.8 0V7" />
                   </svg>
                 </span>
-                The carrier sees {money(values.carrierRate)}. Your customer's rate is not
-                on this document.
+                The carrier never sees your customer's rate.
               </p>
 
               <button
@@ -832,7 +792,7 @@ export default function LoadDetail({ load, record, onSave, onBack, onToast }) {
 /* --------------------------------------------------------------------------
    One mapped control: label, confidence chip, and the control.
    -------------------------------------------------------------------------- */
-function Field({ fieldKey, label, help, load, sources, children, onFocusField, invalid }) {
+function Field({ fieldKey, label, load, sources, children, onFocusField, invalid }) {
   const source = sources[fieldKey] === 'manual' ? 'manual' : 'ai'
   const chip = chipFor(load, fieldKey, source)
 
@@ -848,7 +808,6 @@ function Field({ fieldKey, label, help, load, sources, children, onFocusField, i
         <span className="field__label">{label}</span>
         <span className={`chip chip--${chip.tone}`}>{chip.text}</span>
       </div>
-      {help && <span className="field__help">{help}</span>}
       {children}
     </div>
   )

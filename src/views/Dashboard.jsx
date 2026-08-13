@@ -10,13 +10,7 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
         <section className="callout">
           <div className="callout__left">
             <span className="callout__count num">{needsYou.length}</span>
-            <div>
-              <h3>loads are waiting on you</h3>
-              <p>
-                Everything else was read, filled in and checked. These three need a decision
-                only you can make.
-              </p>
-            </div>
+            <h3>loads are waiting on you</h3>
           </div>
           <div className="callout__chips">
             {needsYou.map((l) => (
@@ -45,7 +39,7 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
               {k.value}
               <em>{k.unit}</em>
             </span>
-            <p className="kpi__sub">{k.sub}</p>
+            {k.sub && <p className="kpi__sub">{k.sub}</p>}
           </article>
         ))}
       </section>
@@ -54,7 +48,6 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
       <section className="ba">
         <header className="sec__head">
           <h2>Where the seventeen minutes went</h2>
-          <p>The same load, handled the old way and the new way.</p>
         </header>
         <div className="ba__grid">
           <BaCard data={BEFORE_AFTER.before} tone="before" />
@@ -84,10 +77,6 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
           </div>
         </header>
         <HoursChart data={WEEKLY_HOURS} />
-        <p className="chartcard__foot">
-          Intake was switched on the week of Jun 23. The desk still reviews every load —
-          it just stopped retyping them.
-        </p>
       </section>
 
       {/* ---- activity ---- */}
@@ -95,7 +84,6 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
         <header className="feedcard__head">
           <div>
             <h3>What happened today</h3>
-            <p>Every action the agent took, in order.</p>
           </div>
           <button className="linkbtn" onClick={() => onNavigate('queue')}>
             Open the queue →
@@ -119,10 +107,6 @@ export default function Dashboard({ loads, onOpenLoad, onNavigate }) {
       <section className="trip">
         <header className="sec__head">
           <h2>One load, start to finish</h2>
-          <p>
-            Three automations on the same screen: a document comes in, a decision gets
-            made, a document goes out.
-          </p>
         </header>
         <div className="trip__grid">
           {ROUND_TRIP.map((t, i) => (

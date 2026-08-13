@@ -5,29 +5,26 @@ export const KPIS = [
     key: 'hours',
     value: '31.5',
     unit: 'hrs',
-    label: 'Hours given back each week',
-    sub: 'Time your team no longer spends retyping documents'
+    label: 'Hours given back each week'
   },
   {
     key: 'loads',
     value: '284',
     unit: 'loads',
-    label: 'Loads entered this month',
-    sub: 'Read, filled in, and checked before anyone opened them'
+    label: 'Loads entered this month'
   },
   {
     key: 'exceptions',
     value: '17',
     unit: 'caught',
-    label: 'Problems caught before booking',
-    sub: '6 suspect carriers · 11 loads priced under your floor'
+    label: 'Caught before booking',
+    sub: '6 suspect carriers · 11 thin margins'
   },
   {
     key: 'accuracy',
     value: '98.6',
     unit: '%',
-    label: 'Fields read correctly',
-    sub: 'Measured against what your team approved'
+    label: 'Fields read correctly'
   }
 ]
 
